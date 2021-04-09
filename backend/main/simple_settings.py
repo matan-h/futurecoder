@@ -28,11 +28,10 @@ class Root(DryEnv):
 
 
 class MONITOR(DryEnv):
+    PROCESS_HISTORY_SIZE = 3
     ACTIVE = False
-    THRESHOLD = 90
-    MIN_PROCESSES = 1
-    NUM_MEASUREMENTS = 3
-    SLEEP_TIME = 5
+    SLEEP_TIME = 15
+    MAX_SINCE = 60 * 60
 
 
 class GITHUB_APP(DryEnv):
