@@ -2,6 +2,7 @@ import linecache
 import logging
 import os
 import sys
+import asyncio # noqa
 from code import InteractiveConsole
 from threading import Thread
 from time import sleep
