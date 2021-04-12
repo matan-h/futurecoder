@@ -60,6 +60,8 @@ def print_friendly_syntax_error(e):
     friendly_messege, friendly_suggest = friendly_message(e, double_newline=True)
     if friendly_suggest:
         friendly_suggest='\n'+friendly_suggest
+    else:
+        friendly_suggest = ''
     print(
         f"""\
 {''.join(lines).rstrip()}
