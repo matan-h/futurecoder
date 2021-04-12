@@ -30,40 +30,23 @@ pygments_formatter = HtmlFormatter(
 log = logging.getLogger(__name__)
 
 
-def get_friendly_obj(e):
+def friendly_message(e, double_newline: bool):
     try:
         fr = FriendlyTraceback(type(e), e, e.__traceback__)
         fr.assign_generic()
         fr.assign_cause()
-        return fr
+
+        return fr.info["generic"] + "\n" + double_newline * "\n" + fr.info.get("cause", ""),fr.info.get("suggest")
     except (Exception, SystemExit):
-        log.exception('Failed to build friendly object')
-
-
-def friendly_message(fr, double_newline: bool):
-    try:
-        return fr.info["generic"] + "\n" + double_newline * "\n" + fr.info.get("cause", "")
-    except Exception:
-        log.exception("Failed to get friendly message")
+        log.exception("Failed to build friendly message")
         return ""
 
 
-def didyoumean_suggestions(e, fr: FriendlyTraceback) -> List[str]:
+def didyoumean_suggestions(e) -> List[str]:
     if "maximum recursion depth exceeded" in str(e):
         return []
     try:
-        mean_suggestions = list(get_suggestions_for_exception(e, e.__traceback__))
-        if not mean_suggestions:
-            friendly_suggestion = fr.info.get('suggest', '')
-            if friendly_suggestion:
-                log.info(f'use friendly_suggestion:{friendly_suggestion}...')
-                friendly_suggestion = friendly_suggestion.strip().replace('Did you mean ','').replace('Did you ','')
-                if friendly_suggestion[-1]=='?':
-                    friendly_suggestion = friendly_suggestion[:-1]
-
-                mean_suggestions = [friendly_suggestion]
-
-        return mean_suggestions
+        return list(get_suggestions_for_exception(e, e.__traceback__))
     except Exception:
         log.exception("Failed to get didyoumean suggestions")
         return []
@@ -74,12 +57,14 @@ def print_friendly_syntax_error(e):
     for line in lines:
         if line.strip().startswith('File "my_program.py"'):
             break
+    friendly_messege, friendly_suggest = friendly_message(e, double_newline=True)
+    if friendly_suggest:
+        friendly_suggest='\n'+friendly_suggest
     print(
         f"""\
 {''.join(lines).rstrip()}
-at line {e.lineno}
-
-{friendly_message(get_friendly_obj(e), double_newline=False)}
+at line {e.lineno} {friendly_suggest}
+{friendly_messege}
 """,
         file=sys.stderr,
     )
@@ -95,7 +80,8 @@ class TracebackSerializer:
             result[-1]["tail"] = traceback._context_message
         else:
             result = []
-        fr = get_friendly_obj(e)
+        #
+        friendly_messege,friendly_suggest = friendly_message(e,double_newline=True)
 
         result.append(
             dict(
@@ -105,8 +91,9 @@ class TracebackSerializer:
                     message=traceback._some_str(e),
                 ),
                 tail="",
-                didyoumean=didyoumean_suggestions(e,fr),
-                friendly=markdown(friendly_message(fr, double_newline=True)),
+                didyoumean=didyoumean_suggestions(e),
+                friendly=markdown(friendly_messege),
+                friendly_suggest = friendly_suggest
             )
         )
         return result
